@@ -18,18 +18,18 @@
 //
 // This file is for use with the TCPDF software library.
 //
-// TCPDI_PARSER is free software: you can redistribute it and/or modify it
+// tcpdi_parser is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation, either version 3 of the
 // License, or (at your option) any later version.
 //
-// TCPDI_PARSER is distributed in the hope that it will be useful, but
+// tcpdi_parser is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the License
-// along with TCPDI_PARSER. If not, see
+// along with tcpdi_parser. If not, see
 // <http://www.tecnick.com/pagefiles/tcpdf/LICENSE.TXT>.
 //
 // See LICENSE file for more information.
@@ -78,7 +78,7 @@ if (!defined ('PDF_TYPE_REAL'))
     define ('PDF_TYPE_REAL', 12);
 
 /**
- * @class TCPDI_PARSER
+ * @class tcpdi_parser
  * This is a PHP class for parsing PDF documents.<br>
  * Based on TCPDF_PARSER, part of the TCPDF project by Nicola Asuni.
  * @brief This is a PHP class for parsing PDF documents..
