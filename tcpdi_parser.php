@@ -298,17 +298,22 @@ class tcpdi_parser {
     function extractObjectStreams() {
     	$numObjStreams = preg_match_all('|([0-9]+) ([0-9]+) obj\s+<<[^>]+/ObjStm|', $this->pdfdata, $matches);
         for ($i=0; $i<$numObjStreams; $i++) {
-        	$objref = array($matches[1][$i], $matches[2][$i]);
-        	$offset = $this->xref['xref'][$objref[0]][$objref[1]];
-        	$dict = $this->getIndirectObject($objref[0].'_'.$objref[1], $offset, true); // Decode object stream, as we need the first bit
-        	$first = intval($dict[0][1]['/First'][1]);
-        	$ints = explode(' ', substr($dict[1][3][0], 0, $first)); // Get list of object / offset pairs
+        	$key = array($matches[1][$i], $matches[2][$i]);
+        	$objref = array(PDF_TYPE_OBJREF, $key[0], $key[1]);
+        	$obj = $this->getObjectVal($objref);
+        	if ($obj[0] !== PDF_TYPE_STREAM || !isset($obj[1][1]['/First'][1])) {
+        		// Not a valid object stream dictionary - skip it.
+        		continue;
+        	}
+        	$stream = $this->decodeStream($obj[1][1], $obj[2][1]);// Decode object stream, as we need the first bit
+        	$first = intval($obj[1][1]['/First'][1]);
+        	$ints = explode(' ', substr($stream[0], 0, $first)); // Get list of object / offset pairs
         	for ($j=1; $j<count($ints); $j++) {
         		if (($j % 2) == 1) {
-        			$this->objstreamobjs[$ints[$j-1]] = array($objref, $ints[$j]+$first);
+        			$this->objstreamobjs[$ints[$j-1]] = array($key, $ints[$j]+$first);
         		}
         	}
-        	unset($dict); // Free memory - we may not need this at all.
+        	unset($obj); // Free memory - we may not need this at all.
     	}
     }
 
@@ -809,7 +814,7 @@ class tcpdi_parser {
 					if (preg_match('/^([\r\n]+)/isU', substr($data, $offset), $matches) == 1) {
 						$offset += strlen($matches[0]);
 					}
-					if (preg_match('/([\r\n]*endstream)/isU', substr($data, $offset), $matches, PREG_OFFSET_CAPTURE) == 1) {
+					if (preg_match('/([\r\n]{0,2}endstream)/isU', substr($data, $offset), $matches, PREG_OFFSET_CAPTURE) == 1) {
 						$objval = substr($data, $offset, $matches[0][1]);
 						$objval = preg_replace('/^[\r\n]+/', '', $objval);
 						$offset += $matches[0][1];
@@ -913,9 +918,9 @@ class tcpdi_parser {
 			if (isset($this->objects[$key[0]][$key[1]])) {
 				// this object has been already parsed
 				$object = $this->objects[$key[0]][$key[1]];
-			} elseif (isset($this->xref['xref'][$key[0]][$key[1]])) {
+			} elseif (($offset = $this->findObjectOffset($key)) !== false) {
 				// parse new object
-				$this->objects[$key[0]][$key[1]] = $this->getIndirectObject($key[0].'_'.$key[1], $this->xref['xref'][$key[0]][$key[1]], false);
+				$this->objects[$key[0]][$key[1]] = $this->getIndirectObject($key[0].'_'.$key[1], $offset, false);
 				$object = $this->objects[$key[0]][$key[1]];
 			} elseif (($key[1] == 0) && isset($this->objstreamobjs[$key[0]])) {
 				// Object is in an object stream
@@ -923,12 +928,16 @@ class tcpdi_parser {
 				$objs = $streaminfo[0];
 				if (!isset($this->objstreams[$objs[0]][$objs[1]])) {
 					// Fetch and decode object stream
-        			$offset = $this->xref['xref'][$objs[0]][$objs[1]];
-        			$objstream = $this->getIndirectObject($objs[0].'_'.$objs[1], $offset, true);
-					$this->objstreams[$objs[0]][$objs[1]] = $objstream[1][3][0]; // Store just the data, in case we need more from this objstream
-					unset($objstream); // Free memory
+        			$offset = $this->findObjectOffset($objs);;
+        			$objstream = $this->getObjectVal(array(PDF_TYPE_OBJREF, $objs[0], $objs[1]));
+					$decoded = $this->decodeStream($objstream[1][1], $objstream[2][1]);
+					$this->objstreams[$objs[0]][$objs[1]] = $decoded[0]; // Store just the data, in case we need more from this objstream
+					// Free memory
+					unset($objstream);
+					unset($decoded);
 				}
-				$object = $this->objects[$key[0]][$key[1]] = $this->getRawObject($streaminfo[1], $this->objstreams[$objs[0]][$objs[1]]);
+				$this->objects[$key[0]][$key[1]] = $this->getRawObject($streaminfo[1], $this->objstreams[$objs[0]][$objs[1]]);
+				$object = $this->objects[$key[0]][$key[1]];
 			}
 			if (!is_null($object)) {
 				$ret[1] = $object[0];
@@ -940,6 +949,27 @@ class tcpdi_parser {
 			}
 		}
 		return $obj;
+	}
+
+	/**
+	 * Get offset of an object.  Checks xref first, then scours the file.
+	 * @param $key (array) Object key to find (obj, gen).
+	 * @return int Offset of the object in $this->pdfdata.
+	 * @private
+	 */
+	private function findObjectOffset($key) {
+		if (isset($this->xref['xref'][$key[0]][$key[1]])) {
+			$objref = $key[0].' '.$key[1].' obj';
+			$offset = $this->xref['xref'][$key[0]][$key[1]];
+			if (strpos($this->pdfdata, $objref, $offset) == $offset) {
+				// Offset is in xref table and matches actual position in file
+				return $this->xref['xref'][$key[0]][$key[1]];
+			}
+		}
+		if (preg_match('/[^0-9]'.$key[0].'[\s]+'.$key[1].'[\s]+obj/iU', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE) === 1) {
+			return intval($matches[0][1]) + 1; // Add one to account for the non-digit at the start of the match.
+		}
+		return false;
 	}
 
 	/**
