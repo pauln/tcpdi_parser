@@ -741,7 +741,7 @@ class tcpdi_parser {
 						// get element
 						list($element, $offset) = $this->getRawObject($offset, $data);
 						$objval[] = $element;
-					} while ($element[0] != ']');
+					} while ($element[0] !== ']');
 					// remove closing delimiter
 					array_pop($objval);
 				} else {
@@ -762,7 +762,7 @@ class tcpdi_parser {
 							// get element
 							list($key, $eloffset) = $this->getRawObject($offset, $data);
 							if ($key[0] == '>>') {
-								$offset += 2;
+								$offset = $eloffset;
 								break;
 							}
 							list($element, $offset) = $this->getRawObject($eloffset, $data);
