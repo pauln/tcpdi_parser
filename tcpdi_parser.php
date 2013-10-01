@@ -206,6 +206,8 @@ class tcpdi_parser {
 	public function cleanUp() {
 		unset($this->pdfdata);
 		$this->pdfdata = '';
+		unset($this->objstreams);
+		$this->objstreams = array();
 	}
 
 	/**
