@@ -261,27 +261,34 @@ class tcpdi_parser {
 			return;
 		}
 
-		$pages = array();
+		$this->pages = array();
 		if (isset($dict[1]['/Kids'])) {
 			$v = $dict[1]['/Kids'];
 			if ($v[0] == PDF_TYPE_ARRAY) {
 				foreach ($v[1] as $ref) {
 					$page = $this->getObjectVal($ref);
-					if (isset($page[1][1]['/Kids'])) {
-						// Nested pages!
-						foreach ($page[1][1]['/Kids'][1] as $subref) {
-							$subpage = $this->getObjectVal($subref);
-							$pages[] = $subpage;
-						}
-					} else {
-						$pages[] = $page;
-					}
+					$this->readPage($page);
 				}
 			}
 		}
 
-		$this->pages = $pages;
-		$this->page_count = count($pages);
+		$this->page_count = count($this->pages);
+    }
+    
+    /**
+     * Read a single /Page element, recursing through /Kids if necessary
+     *
+     */
+    private function readPage($page) {
+		if (isset($page[1][1]['/Kids'])) {
+			// Nested pages!
+			foreach ($page[1][1]['/Kids'][1] as $subref) {
+				$subpage = $this->getObjectVal($subref);
+				$this->readPage($subpage);
+			}
+		} else {
+			$this->pages[] = $page;
+		}
     }
     
     /**
