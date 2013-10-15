@@ -130,6 +130,12 @@ class tcpdi_parser {
 	protected $objects = array();
 
 	/**
+	 * Array of object offsets.
+	 * @private
+	 */
+	private $objoffsets = array();
+
+	/**
 	 * Class object for decoding filters.
 	 * @private
 	 */
@@ -187,6 +193,7 @@ class tcpdi_parser {
 		$this->FilterDecoders = new TCPDF_FILTERS();
 		// get xref and trailer data
 		$this->xref = $this->getXrefData();
+		$this->objoffsets = $this->findObjectOffsets();
 		// parse all document objects
 		$this->objects = array();
 		/*foreach ($this->xref['xref'] as $obj => $offset) {
@@ -961,22 +968,37 @@ class tcpdi_parser {
 	}
 
 	/**
-	 * Get offset of an object.  Checks xref first, then scours the file.
+	 * Find all object offsets.  Saves having to scour the file multiple times.
+	 * @return array Offsets of all objects found in the root of the pdf.
+	 * @private
+	 */
+	private function findObjectOffsets() {
+		$offsets = array();
+		if (preg_match_all('/[0-9]+[\s]+[0-9]+[\s]+obj/iU', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE) >= 1) {
+			foreach($matches[0] as $match) {
+				$offsets[$match[0]] = $match[1];
+			}
+		}
+		return $offsets;
+	}
+
+	/**
+	 * Get offset of an object.  Checks xref first, then offsets found by scouring the file.
 	 * @param $key (array) Object key to find (obj, gen).
 	 * @return int Offset of the object in $this->pdfdata.
 	 * @private
 	 */
 	private function findObjectOffset($key) {
+		$objref = $key[0].' '.$key[1].' obj';
 		if (isset($this->xref['xref'][$key[0]][$key[1]])) {
-			$objref = $key[0].' '.$key[1].' obj';
 			$offset = $this->xref['xref'][$key[0]][$key[1]];
 			if (strpos($this->pdfdata, $objref, $offset) == $offset) {
 				// Offset is in xref table and matches actual position in file
 				return $this->xref['xref'][$key[0]][$key[1]];
 			}
 		}
-		if (preg_match('/[^0-9]'.$key[0].'[\s]+'.$key[1].'[\s]+obj/iU', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE) === 1) {
-			return intval($matches[0][1]) + 1; // Add one to account for the non-digit at the start of the match.
+		if (array_key_exists($objref, $this->objoffsets)) {
+			return $this->objoffsets[$objref];
 		}
 		return false;
 	}
