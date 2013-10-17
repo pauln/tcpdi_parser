@@ -775,22 +775,11 @@ class tcpdi_parser {
 				if (isset($data{($offset + 1)}) AND ($data{($offset + 1)} == $char)) {
 					// dictionary object
 					$objtype = PDF_TYPE_DICTIONARY;
-					$offset += 2;
 					if ($char == '<') {
-						// get array content
-						$objval = array();
-						do {
-							// get element
-							list($key, $eloffset) = $this->getRawObject($offset, $data);
-							if ($key[0] == '>>') {
-								$offset = $eloffset;
-								break;
-							}
-							list($element, $offset) = $this->getRawObject($eloffset, $data);
-							$objval['/'.$key[1]] = $element;
-						} while (true);
+						list ($objval, $offset) = $this->getDictValue($offset, $data);
 					} else {
 						$objtype = '>>';
+						$offset += 2;
 					}
 				} else {
 					// hexadecimal string object
@@ -868,6 +857,42 @@ class tcpdi_parser {
 			$obj[] = $objval;
 		}
 		return array($obj, $offset);
+	}
+	private function getDictValue($offset, &$data) {
+		$objval = array();
+
+		// Extract dict from data.
+		$i=1;
+		$dict = '';
+		$offset += 2;
+		do {
+			if ($data{$offset} == '>' && $data{$offset+1} == '>') {
+				$i--;
+				$dict .= '>>';
+				$offset += 2;
+			} else if ($data{$offset} == '<' && $data{$offset+1} == '<') {
+				$i++;
+				$dict .= '<<';
+				$offset += 2;
+			} else {
+				$dict .= $data{$offset};
+				$offset++;
+			}
+		} while ($i>0);
+
+		// Now that we have just the dict, parse it.
+		$dictoffset = 0;
+		do {
+			// Get dict element.
+			list($key, $eloffset) = $this->getRawObject($dictoffset, $dict);
+			if ($key[0] == '>>') {
+				break;
+			}
+			list($element, $dictoffset) = $this->getRawObject($eloffset, $dict);
+			$objval['/'.$key[1]] = $element;
+		} while (true);
+		
+		return array($objval, $offset);
 	}
 
 	/**
@@ -994,10 +1019,12 @@ class tcpdi_parser {
 			$offset = $this->xref['xref'][$key[0]][$key[1]];
 			if (strpos($this->pdfdata, $objref, $offset) == $offset) {
 				// Offset is in xref table and matches actual position in file
+				//echo "Offset in XREF is correct, returning<br>";
 				return $this->xref['xref'][$key[0]][$key[1]];
 			}
 		}
 		if (array_key_exists($objref, $this->objoffsets)) {
+			//echo "Offset found in internal reftable<br>";
 			return $this->objoffsets[$objref];
 		}
 		return false;
