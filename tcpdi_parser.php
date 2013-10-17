@@ -816,13 +816,13 @@ class tcpdi_parser {
 					// start stream object
 					$objtype = PDF_TYPE_STREAM;
 					$offset += 6;
-					if (preg_match('/^([\r\n]+)/isU', substr($data, $offset), $matches) == 1) {
+					if (preg_match('/^([\r\n]+)/isU', substr($data, $offset, 32), $matches) == 1) {
 						$offset += strlen($matches[0]);
 					}
-					if (preg_match('/([\r\n]{0,2}endstream)/isU', substr($data, $offset), $matches, PREG_OFFSET_CAPTURE) == 1) {
-						$objval = substr($data, $offset, $matches[0][1]);
+					if (preg_match('/([\r\n]{0,2}endstream)/isU', $data, $matches, PREG_OFFSET_CAPTURE, $offset) == 1) {
+						$objval = substr($data, $offset, $matches[0][1]-$offset);
 						$objval = preg_replace('/^[\r\n]+/', '', $objval);
-						$offset += $matches[0][1];
+						$offset = $matches[0][1];
 					}
 				} elseif (substr($data, $offset, 9) == 'endstream') {
 					// end stream object
