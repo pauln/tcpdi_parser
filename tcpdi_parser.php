@@ -793,56 +793,66 @@ class tcpdi_parser {
 				break;
 			}
 			default: {
-				if (substr($data, $offset, 6) == 'endobj') {
-					// indirect object
-					$objtype = 'endobj';
-					$offset += 6;
-				} elseif (substr($data, $offset, 4) == 'null') {
-					// null object
-					$objtype = PDF_TYPE_NULL;
-					$offset += 4;
-					$objval = 'null';
-				} elseif (substr($data, $offset, 4) == 'true') {
-					// boolean true object
-					$objtype = PDF_TYPE_BOOLEAN;
-					$offset += 4;
-					$objval = 'true';
-				} elseif (substr($data, $offset, 5) == 'false') {
-					// boolean false object
-					$objtype = PDF_TYPE_BOOLEAN;
-					$offset += 5;
-					$objval = 'false';
-				} elseif (substr($data, $offset, 6) == 'stream') {
-					// start stream object
-					$objtype = PDF_TYPE_STREAM;
-					$offset += 6;
-					if (preg_match('/^([\r\n]+)/isU', substr($data, $offset, 32), $matches) == 1) {
-						$offset += strlen($matches[0]);
-					}
-					if (preg_match('/([\r\n]{0,2}endstream)/isU', $data, $matches, PREG_OFFSET_CAPTURE, $offset) == 1) {
-						$objval = substr($data, $offset, $matches[0][1]-$offset);
-						$objval = preg_replace('/^[\r\n]+/', '', $objval);
-						$offset = $matches[0][1];
-					}
-				} elseif (substr($data, $offset, 9) == 'endstream') {
-					// end stream object
-					$objtype = 'endstream';
-					$offset += 9;
-				} elseif (preg_match('/^([0-9]+)[\s]+([0-9]+)[\s]+R/iU', substr($data, $offset, 33), $matches) == 1) {
-					// indirect object reference
-					$objtype = PDF_TYPE_OBJREF;
-					$offset += strlen($matches[0]);
-					$objval = array(intval($matches[1]), intval($matches[2]));
-				} elseif (preg_match('/^([0-9]+)[\s]+([0-9]+)[\s]+obj/iU', substr($data, $offset, 33), $matches) == 1) {
-					// object start
-					$objtype = PDF_TYPE_OBJECT;
-					$objval = intval($matches[1]).'_'.intval($matches[2]);
-					$offset += strlen ($matches[0]);
-				} elseif (($numlen = strspn($data, '+-.0123456789', $offset)) > 0) {
-					// numeric object
-					$objval = substr($data, $offset, $numlen);
-					$objtype = (intval($objval) != $objval) ? PDF_TYPE_REAL : PDF_TYPE_NUMERIC;
-					$offset += $numlen;
+				switch (substr($data, $offset, 4)) {
+					case 'endo':
+						// indirect object
+						$objtype = 'endobj';
+						$offset += 6;
+						break;
+					case 'null':
+						// null object
+						$objtype = PDF_TYPE_NULL;
+						$offset += 4;
+						$objval = 'null';
+						break;
+					case 'true':
+						// boolean true object
+						$objtype = PDF_TYPE_BOOLEAN;
+						$offset += 4;
+						$objval = 'true';
+						break;
+					case 'fals':
+						// boolean false object
+						$objtype = PDF_TYPE_BOOLEAN;
+						$offset += 5;
+						$objval = 'false';
+						break;
+					case 'stre':
+						// start stream object
+						$objtype = PDF_TYPE_STREAM;
+						$offset += 6;
+						$offset += strspn($data, "\r\n", $offset);
+						if (preg_match('/([\r\n]{0,2}endstream)/isU', $data, $matches, PREG_OFFSET_CAPTURE, $offset) == 1) {
+							$objval = substr($data, $offset, $matches[0][1]-$offset);
+							$objval = preg_replace('/^[\r\n]+/', '', $objval);
+							$offset = $matches[0][1];
+						}
+						break;
+					case 'ends':
+						// end stream object
+						$objtype = 'endstream';
+						$offset += 9;
+						break;
+					default:
+						if (preg_match('/^([0-9]+)[\s]+([0-9]+)[\s]+([Robj]{1,3})/i', substr($data, $offset, 33), $matches) == 1) {
+							if ($matches[3] == 'R') {
+								// indirect object reference
+								$objtype = PDF_TYPE_OBJREF;
+								$offset += strlen($matches[0]);
+								$objval = array(intval($matches[1]), intval($matches[2]));
+							} elseif ($matches[3] == 'obj') {
+								// object start
+								$objtype = PDF_TYPE_OBJECT;
+								$objval = intval($matches[1]).'_'.intval($matches[2]);
+								$offset += strlen ($matches[0]);
+							}
+						} elseif (($numlen = strspn($data, '+-.0123456789', $offset)) > 0) {
+							// numeric object
+							$objval = substr($data, $offset, $numlen);
+							$objtype = (intval($objval) != $objval) ? PDF_TYPE_REAL : PDF_TYPE_NUMERIC;
+							$offset += $numlen;
+						}
+						break;
 				}
 				break;
 			}
