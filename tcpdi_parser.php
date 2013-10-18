@@ -677,6 +677,25 @@ class tcpdi_parser {
 	}
 
 	/**
+	 * Get raw stream data
+	 * @param $offset (int) Stream offset.
+	 * @param $length (int) Stream length.
+	 * @return string Steam content
+	 * @protected
+	 */
+	protected function getRawStream($offset, $length) {
+		$offset += strspn($this->pdfdata, "\x00\x09\x0a\x0c\x0d\x20", $offset);
+		$offset += 6; // "stream"
+		$offset += strspn($this->pdfdata, "\r\n", $offset);
+
+		$obj = array();
+		$obj[] = PDF_TYPE_STREAM;
+		$obj[] = substr($this->pdfdata, $offset, $length);
+
+		return array($obj, $offset+$length);
+	}
+
+	/**
 	 * Get object type, raw value and offset to next object
 	 * @param $offset (int) Object offset.
 	 * @return array containing object type, raw value and offset to next object
@@ -799,6 +818,9 @@ class tcpdi_parser {
 						$objtype = 'endobj';
 						$offset += 6;
 						break;
+					case 'stre':
+						// Streams should always be indirect objects, and thus processed by getRawStream().
+						// If we get here, treat it as a null object as something has gone wrong.
 					case 'null':
 						// null object
 						$objtype = PDF_TYPE_NULL;
@@ -816,17 +838,6 @@ class tcpdi_parser {
 						$objtype = PDF_TYPE_BOOLEAN;
 						$offset += 5;
 						$objval = 'false';
-						break;
-					case 'stre':
-						// start stream object
-						$objtype = PDF_TYPE_STREAM;
-						$offset += 6;
-						$offset += strspn($data, "\r\n", $offset);
-						if (preg_match('/([\r\n]{0,2}endstream)/isU', $data, $matches, PREG_OFFSET_CAPTURE, $offset) == 1) {
-							$objval = substr($data, $offset, $matches[0][1]-$offset);
-							$objval = preg_replace('/^[\r\n]+/', '', $objval);
-							$offset = $matches[0][1];
-						}
 						break;
 					case 'ends':
 						// end stream object
@@ -932,8 +943,14 @@ class tcpdi_parser {
 		$objdata = array();
 		$i = 0; // object main index
 		do {
-			// get element
-			list($element, $offset) = $this->getRawObject($offset);
+			if (($i > 0) AND (isset($objdata[($i - 1)][0])) AND ($objdata[($i - 1)][0] == PDF_TYPE_DICTIONARY) AND array_key_exists('/Length', $objdata[($i - 1)][1])) {
+				// Stream - get using /Length in stream's dict
+				$streamlength = $objdata[($i-1)][1]['/Length'][1];
+				list($element, $offset) = $this->getRawStream($offset, $streamlength);
+			} else {
+				// get element
+				list($element, $offset) = $this->getRawObject($offset);
+			}
 			// decode stream using stream's dictionary information
 			if ($decoding AND ($element[0] == PDF_TYPE_STREAM) AND (isset($objdata[($i - 1)][0])) AND ($objdata[($i - 1)][0] == PDF_TYPE_DICTIONARY)) {
 				$element[3] = $this->decodeStream($objdata[($i - 1)][1], $element[1]);
