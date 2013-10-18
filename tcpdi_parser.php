@@ -1026,7 +1026,7 @@ class tcpdi_parser {
 	 */
 	private function findObjectOffsets() {
 		$offsets = array();
-		if (preg_match_all('/[0-9]+[\s]+[0-9]+[\s]+obj/iU', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE) >= 1) {
+		if (preg_match_all('/^[0-9]+[\s]+[0-9]+[\s]+obj/i', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE) >= 1) {
 			foreach($matches[0] as $match) {
 				$offsets[$match[0]] = $match[1];
 			}
