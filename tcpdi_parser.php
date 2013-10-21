@@ -700,10 +700,9 @@ class tcpdi_parser {
 				// name object
 				$objtype = PDF_TYPE_TOKEN;
 				++$offset;
-				if (preg_match('/^([^\x00\x09\x0a\x0c\x0d\x20\s\x28\x29\x3c\x3e\x5b\x5d\x7b\x7d\x2f\x25]+)/', substr($data, $offset, 256), $matches) == 1) {
-					$objval = $matches[1]; // unescaped value
-					$offset += strlen($objval);
-				}
+				$length = strcspn($data, "\x00\x09\x0a\x0c\x0d\x20\x28\x29\x3c\x3e\x5b\x5d\x7b\x7d\x2f\x25", $offset);
+				$objval = substr($data, $offset, $length);
+				$offset += $length;
 				break;
 			}
 			case '(':   // \x28 LEFT PARENTHESIS
