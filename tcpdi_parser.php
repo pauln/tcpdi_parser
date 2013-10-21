@@ -202,7 +202,6 @@ class tcpdi_parser {
 				//$this->objects[$obj] = $this->getIndirectObject($obj, $offset, true);
 			}
 		}*/
-		$this->extractObjectStreams();
         $this->getPDFVersion();
 		$this->readPages();
 	}
@@ -305,32 +304,6 @@ class tcpdi_parser {
      */
     function getPageCount() {
         return $this->page_count;
-    }
-    
-    /**
-     * Find and extract all object streams
-     *
-     */
-    function extractObjectStreams() {
-    	$numObjStreams = preg_match_all('|([0-9]+) ([0-9]+) obj\s+<<[^>]+/ObjStm|', $this->pdfdata, $matches);
-        for ($i=0; $i<$numObjStreams; $i++) {
-        	$key = array($matches[1][$i], $matches[2][$i]);
-        	$objref = array(PDF_TYPE_OBJREF, $key[0], $key[1]);
-        	$obj = $this->getObjectVal($objref);
-        	if ($obj[0] !== PDF_TYPE_STREAM || !isset($obj[1][1]['/First'][1])) {
-        		// Not a valid object stream dictionary - skip it.
-        		continue;
-        	}
-        	$stream = $this->decodeStream($obj[1][1], $obj[2][1]);// Decode object stream, as we need the first bit
-        	$first = intval($obj[1][1]['/First'][1]);
-        	$ints = explode(' ', substr($stream[0], 0, $first)); // Get list of object / offset pairs
-        	for ($j=1; $j<count($ints); $j++) {
-        		if (($j % 2) == 1) {
-        			$this->objstreamobjs[$ints[$j-1]] = array($key, $ints[$j]+$first);
-        		}
-        	}
-        	unset($obj); // Free memory - we may not need this at all.
-    	}
     }
 
 	/**
@@ -1018,6 +991,31 @@ class tcpdi_parser {
 		}
 		return $obj;
 	}
+    
+    /**
+     * Extract object stream to find out what it contains.
+     *
+     */
+    function extractObjectStream($key) {
+		$objref = array(PDF_TYPE_OBJREF, $key[0], $key[1]);
+    	$obj = $this->getObjectVal($objref);
+    	if ($obj[0] !== PDF_TYPE_STREAM || !isset($obj[1][1]['/First'][1])) {
+    		// Not a valid object stream dictionary - skip it.
+    		return;
+    	}
+    	$stream = $this->decodeStream($obj[1][1], $obj[2][1]);// Decode object stream, as we need the first bit
+    	$first = intval($obj[1][1]['/First'][1]);
+    	$ints = explode(' ', substr($stream[0], 0, $first)); // Get list of object / offset pairs
+    	for ($j=1; $j<count($ints); $j++) {
+    		if (($j % 2) == 1) {
+    			$this->objstreamobjs[$ints[$j-1]] = array($key, $ints[$j]+$first);
+    		}
+    	}
+
+    	// Free memory - we may not need this at all.
+    	unset($obj);
+    	unset($stream);
+    }
 
 	/**
 	 * Find all object offsets.  Saves having to scour the file multiple times.
@@ -1026,9 +1024,15 @@ class tcpdi_parser {
 	 */
 	private function findObjectOffsets() {
 		$offsets = array();
-		if (preg_match_all('/^[0-9]+[\s]+[0-9]+[\s]+obj/i', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE) >= 1) {
+		if (preg_match_all('/(*ANYCRLF)^([0-9]+)[\s]+([0-9]+)[\s]+obj/im', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE) >= 1) {
+			$i = 0;
 			foreach($matches[0] as $match) {
 				$offsets[$match[0]] = $match[1];
+				$dictoffset = $match[1] + strlen($match[0]);
+				if (preg_match('|^\s+<<[^>]+/ObjStm|', substr($this->pdfdata, $dictoffset, 256), $objstm) == 1) {
+					$this->extractObjectStream(array($matches[1][$i][0], $matches[2][$i][0]));
+				}
+				$i++;
 			}
 		}
 		return $offsets;
