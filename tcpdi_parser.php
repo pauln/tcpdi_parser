@@ -783,7 +783,8 @@ class tcpdi_parser {
 				break;
 			}
 			default: {
-				switch (substr($data, $offset, 4)) {
+				$frag = $data{$offset} . $data{$offset+1} . $data{$offset+2} . $data{$offset+3};
+				switch ($frag) {
 					case 'endo':
 						// indirect object
 						$objtype = 'endobj';
