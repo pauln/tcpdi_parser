@@ -214,6 +214,16 @@ class tcpdi_parser {
 		$this->pdfdata = '';
 		unset($this->objstreams);
 		$this->objstreams = array();
+		unset($this->objects);
+		$this->objects = array();
+		unset($this->objstreamobjs);
+		$this->objstreamobjs = array();
+		unset($this->xref);
+		$this->xref = array();
+		unset($this->objoffsets);
+		$this->objoffsets = array();
+		unset($this->pages);
+		$this->pages = array();
 	}
 
 	/**
@@ -332,6 +342,7 @@ class tcpdi_parser {
 				$this->Error('Unable to find startxref');
 			}
 		}
+		unset($matches);
 		// check xref position
 		if (strpos($this->pdfdata, 'xref', $startxref) == $startxref) {
 			// Cross-Reference
@@ -387,6 +398,7 @@ class tcpdi_parser {
 				$obj_num = intval($matches[1][0]);
 			}
 		}
+		unset($matches);
 		$xref['max_object'] = max($xref['max_object'], $obj_num);
 		// get trailer data
 		if (preg_match('/trailer[\s]*<<(.*)>>[\s]*[\r\n]+startxref[\s]*[\r\n]+/isU', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE, $xoffset) > 0) {
@@ -423,6 +435,7 @@ class tcpdi_parser {
 					$xref = $this->getXrefData($prevoffset, $xref);
 				}
 			}
+			unset($matches);
 		} else {
 			$this->Error('Unable to find trailer');
 		}
@@ -584,6 +597,7 @@ class tcpdi_parser {
 				$prev_row = $ddata[$k];
 			} // end for each row
 			// complete decoding
+			unset($sdata);
 			$sdata = array();
 			// for every row
 			foreach ($ddata as $k => $row) {
@@ -603,7 +617,7 @@ class tcpdi_parser {
 					}
 				}
 			}
-			$ddata = array();
+			unset($ddata);
 			// fill xref
 			if (isset($index_first)) {
 				$obj_num = $index_first;
@@ -780,6 +794,7 @@ class tcpdi_parser {
 					if (($char == '<') AND (preg_match('/^([0-9A-Fa-f]+)[>]/iU', substr($data, $offset), $matches) == 1)) {
 						$objval = $matches[1];
 						$offset += strlen($matches[0]);
+						unset($matches);
 					}
 				}
 				break;
@@ -837,6 +852,7 @@ class tcpdi_parser {
 							$objtype = (intval($objval) != $objval) ? PDF_TYPE_REAL : PDF_TYPE_NUMERIC;
 							$offset += $numlen;
 						}
+						unset($matches);
 						break;
 				}
 				break;
@@ -885,6 +901,8 @@ class tcpdi_parser {
 			}
 			list($element, $dictoffset) = $this->getRawObject($eloffset, $dict);
 			$objval['/'.$key[1]] = $element;
+			unset($key);
+			unset($element);
 		} while (true);
 		
 		return array($objval, $offset);
@@ -1036,6 +1054,7 @@ class tcpdi_parser {
 				$i++;
 			}
 		}
+		unset($matches);
 		return $offsets;
 	}
 
