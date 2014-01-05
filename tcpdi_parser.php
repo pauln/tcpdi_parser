@@ -193,7 +193,7 @@ class tcpdi_parser {
 		$this->FilterDecoders = new TCPDF_FILTERS();
 		// get xref and trailer data
 		$this->xref = $this->getXrefData();
-		$this->objoffsets = $this->findObjectOffsets();
+		$this->findObjectOffsets();
 		// parse all document objects
 		$this->objects = array();
 		/*foreach ($this->xref['xref'] as $obj => $offset) {
@@ -1038,15 +1038,14 @@ class tcpdi_parser {
 
 	/**
 	 * Find all object offsets.  Saves having to scour the file multiple times.
-	 * @return array Offsets of all objects found in the root of the pdf.
 	 * @private
 	 */
 	private function findObjectOffsets() {
-		$offsets = array();
+		$this->objoffsets = array();
 		if (preg_match_all('/(*ANYCRLF)^([0-9]+)[\s]+([0-9]+)[\s]+obj/im', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE) >= 1) {
 			$i = 0;
 			foreach($matches[0] as $match) {
-				$offsets[$match[0]] = $match[1];
+				$this->objoffsets[$match[0]] = $match[1];
 				$dictoffset = $match[1] + strlen($match[0]);
 				if (preg_match('|^\s+<<[^>]+/ObjStm|', substr($this->pdfdata, $dictoffset, 256), $objstm) == 1) {
 					$this->extractObjectStream(array($matches[1][$i][0], $matches[2][$i][0]));
@@ -1055,7 +1054,6 @@ class tcpdi_parser {
 			}
 		}
 		unset($matches);
-		return $offsets;
 	}
 
 	/**
