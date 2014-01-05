@@ -937,7 +937,14 @@ class tcpdi_parser {
 		do {
 			if (($i > 0) AND (isset($objdata[($i - 1)][0])) AND ($objdata[($i - 1)][0] == PDF_TYPE_DICTIONARY) AND array_key_exists('/Length', $objdata[($i - 1)][1])) {
 				// Stream - get using /Length in stream's dict
-				$streamlength = $objdata[($i-1)][1]['/Length'][1];
+				$lengthobj = $objdata[($i-1)][1]['/Length'];
+				if ($lengthobj[0] === PDF_TYPE_OBJREF) {
+					$lengthobj = $this->getObjectVal($lengthobj);
+					if ($lengthobj[0] === PDF_TYPE_OBJECT) {
+						$lengthobj = $lengthobj[1];
+					}
+				}
+				$streamlength = $lengthobj[1];
 				list($element, $offset) = $this->getRawStream($offset, $streamlength);
 			} else {
 				// get element
