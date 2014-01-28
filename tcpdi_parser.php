@@ -343,6 +343,10 @@ class tcpdi_parser {
 			}
 		}
 		unset($matches);
+
+		// DOMPDF gets the startxref wrong, giving us the linebreak before the xref starts.
+		$startxref += strspn($this->pdfdata, "\r\n", $startxref);
+
 		// check xref position
 		if (strpos($this->pdfdata, 'xref', $startxref) == $startxref) {
 			// Cross-Reference
