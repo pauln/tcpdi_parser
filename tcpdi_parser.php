@@ -477,6 +477,8 @@ class tcpdi_parser {
 		$valid_crs = false;
 		$sarr = $xrefcrs[0][1];
 		$keys = array_keys($sarr);
+		$columns = 1; // Default as per PDF 32000-1:2008.
+		$predictor = 1; // Default as per PDF 32000-1:2008.
 		foreach ($keys as $k=>$key) {
 			$v = $sarr[$key];
 			if (($key == '/Type') AND ($v[0] == PDF_TYPE_TOKEN AND ($v[1] == 'XRef'))) {
