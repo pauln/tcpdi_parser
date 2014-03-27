@@ -826,13 +826,13 @@ class tcpdi_parser {
 						// boolean true object
 						$objtype = PDF_TYPE_BOOLEAN;
 						$offset += 4;
-						$objval = 'true';
+						$objval = true;
 						break;
 					case 'fals':
 						// boolean false object
 						$objtype = PDF_TYPE_BOOLEAN;
 						$offset += 5;
-						$objval = 'false';
+						$objval = false;
 						break;
 					case 'ends':
 						// end stream object
