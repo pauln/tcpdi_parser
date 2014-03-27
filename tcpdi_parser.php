@@ -1055,10 +1055,11 @@ class tcpdi_parser {
 	 */
 	private function findObjectOffsets() {
 		$this->objoffsets = array();
-		if (preg_match_all('/(*ANYCRLF)^([0-9]+)[\s]+([0-9]+)[\s]+obj/im', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE) >= 1) {
+		if (preg_match_all('/(*ANYCRLF)^[\s]*([0-9]+)[\s]+([0-9]+)[\s]+obj/im', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE) >= 1) {
 			$i = 0;
 			foreach($matches[0] as $match) {
-				$this->objoffsets[$match[0]] = $match[1];
+				$offset = $match[1] + strspn($match[0], "\x00\x09\x0a\x0c\x0d\x20");
+				$this->objoffsets[trim($match[0])] = $offset;
 				$dictoffset = $match[1] + strlen($match[0]);
 				if (preg_match('|^\s+<<[^>]+/ObjStm|', substr($this->pdfdata, $dictoffset, 256), $objstm) == 1) {
 					$this->extractObjectStream(array($matches[1][$i][0], $matches[2][$i][0]));
