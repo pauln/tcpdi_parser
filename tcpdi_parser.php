@@ -797,7 +797,8 @@ class tcpdi_parser {
 					// hexadecimal string object
 					$objtype = PDF_TYPE_HEX;
 					++$offset;
-					if (($char == '<') AND (preg_match('/^([0-9A-Fa-f]+)[>]/iU', substr($data, $offset), $matches) == 1)) {
+					// The "Panose" entry in the FontDescriptor Style dict seems to have hex bytes separated by spaces.
+					if (($char == '<') AND (preg_match('/^([0-9A-Fa-f ]+)[>]/iU', substr($data, $offset), $matches) == 1)) {
 						$objval = $matches[1];
 						$offset += strlen($matches[0]);
 						unset($matches);
