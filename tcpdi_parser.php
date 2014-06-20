@@ -1082,7 +1082,7 @@ class tcpdi_parser {
 		$objref = $key[0].' '.$key[1].' obj';
 		if (isset($this->xref['xref'][$key[0]][$key[1]])) {
 			$offset = $this->xref['xref'][$key[0]][$key[1]];
-			if (strpos($this->pdfdata, $objref, $offset) == $offset) {
+			if (strpos($this->pdfdata, $objref, $offset) === $offset) {
 				// Offset is in xref table and matches actual position in file
 				//echo "Offset in XREF is correct, returning<br>";
 				return $this->xref['xref'][$key[0]][$key[1]];
