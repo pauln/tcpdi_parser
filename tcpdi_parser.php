@@ -553,6 +553,7 @@ class tcpdi_parser {
 						$row_upleft = $prev_row[($j - 1)];
 					}
 					switch ($predictor) {
+						case 1: // No prediction (equivalent to PNG None)
 						case 10: { // PNG prediction (on encoding, PNG None on all rows)
 							$ddata[$k][$j] = $row[$i];
 							break;
