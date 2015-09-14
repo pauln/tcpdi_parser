@@ -1061,16 +1061,27 @@ class tcpdi_parser {
         $this->objoffsets = array();
         if (preg_match_all('/(*ANYCRLF)^[\s]*([0-9]+)[\s]+([0-9]+)[\s]+obj/im', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE) >= 1) {
             $i = 0;
+            $laststreamend = 0;
             foreach($matches[0] as $match) {
                 $offset = $match[1] + strspn($match[0], "\x00\x09\x0a\x0c\x0d\x20");
+                if ($offset < $laststreamend) {
+                    // Contained within another stream, skip it.
+                    continue;
+                }
                 $this->objoffsets[trim($match[0])] = $offset;
                 $dictoffset = $match[1] + strlen($match[0]);
-                if (preg_match('|^\s+<<[^>]+/ObjStm|', substr($this->pdfdata, $dictoffset, 256), $objstm) == 1) {
+                $dictfrag = substr($this->pdfdata, $dictoffset, 256);
+                if (preg_match('|^\s+<<[^>]+/Length\s+(\d+)|', $dictfrag, $lengthmatch, PREG_OFFSET_CAPTURE) == 1) {
+                    $laststreamend += intval($lengthmatch[1][0]);
+                }
+                if (preg_match('|^\s+<<[^>]+/ObjStm|', $dictfrag, $objstm) == 1) {
                     $this->extractObjectStream(array($matches[1][$i][0], $matches[2][$i][0]));
                 }
                 $i++;
             }
         }
+        unset($lengthmatch);
+        unset($dictfrag);
         unset($matches);
     }
 
