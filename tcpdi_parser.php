@@ -681,6 +681,7 @@ class tcpdi_parser {
     protected function getRawStream($offset, $length) {
         $offset += strspn($this->pdfdata, "\x00\x09\x0a\x0c\x0d\x20", $offset);
         $offset += 6; // "stream"
+        $offset += strspn($this->pdfdata, "\x20", $offset);
         $offset += strspn($this->pdfdata, "\r\n", $offset);
 
         $obj = array();
