@@ -542,6 +542,10 @@ class tcpdi_parser {
                 }
                 // for each byte on the row
                 for ($i=1; $i<=$columns; ++$i) {
+                    if (!isset($row[$i])) {
+                        // No more data in this row - we're done here.
+                        break;
+                    }
                     // new index
                     $j = ($i - 1);
                     $row_up = $prev_row[$j];
