@@ -327,7 +327,7 @@ class tcpdi_parser {
     protected function getXrefData($offset=0, $xref=array()) {
         if ($offset == 0) {
             // find last startxref
-            if (preg_match('/.*[\r\n]startxref[\s]*[\r\n]+([0-9]+)[\s]*[\r\n]+%%EOF/is', $this->pdfdata, $matches) == 0) {
+            if (preg_match('/.*[\r\n]startxref[\s\r\n]+([0-9]+)[\s\r\n]+%%EOF/is', $this->pdfdata, $matches) == 0) {
                 $this->Error('Unable to find startxref');
             }
             $startxref = $matches[1];
@@ -335,7 +335,7 @@ class tcpdi_parser {
             if (preg_match('/([0-9]+[\s][0-9]+[\s]obj)/i', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE, $offset)) {
                 // Cross-Reference Stream object
                 $startxref = $offset;
-            } elseif (preg_match('/[\r\n]startxref[\s]*[\r\n]+([0-9]+)[\s]*[\r\n]+%%EOF/i', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE, $offset)) {
+            } elseif (preg_match('/[\r\n]startxref[\s\r\n]+([0-9]+)[\s\r\n]+%%EOF/i', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE, $offset)) {
                 // startxref found
                 $startxref = $matches[1][0];
             } else {
@@ -405,7 +405,7 @@ class tcpdi_parser {
         unset($matches);
         $xref['max_object'] = max($xref['max_object'], $obj_num);
         // get trailer data
-        if (preg_match('/trailer[\s]*<<(.*)>>[\s]*[\r\n]+(?:[%].*[\r\n]+)*startxref[\s]*[\r\n]+/isU', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE, $xoffset) > 0) {
+        if (preg_match('/trailer[\s]*<<(.*)>>[\s\r\n]+(?:[%].*[\r\n]+)*startxref[\s\r\n]+/isU', $this->pdfdata, $matches, PREG_OFFSET_CAPTURE, $xoffset) > 0) {
             $trailer_data = $matches[1][0];
             if (!isset($xref['trailer']) OR empty($xref['trailer'])) {
                 // get only the last updated version
