@@ -1,9 +1,9 @@
 <?php
 //============================================================+
 // File name   : tcpdi_parser.php
-// Version     : 1.0
+// Version     : 1.1
 // Begin       : 2013-09-25
-// Last Update : 2013-09-25
+// Last Update : 2016-05-03
 // Author      : Paul Nicholls - https://github.com/pauln
 // License     : GNU-LGPL v3 (http://www.gnu.org/copyleft/lesser.html)
 //
@@ -44,7 +44,7 @@
  * This is a PHP class for parsing PDF documents.<br>
  * @author Paul Nicholls
  * @author Nicola Asuni
- * @version 1.0
+ * @version 1.1
  */
 
 // include class for decoding filters
@@ -82,7 +82,7 @@ if (!defined ('PDF_TYPE_REAL'))
  * This is a PHP class for parsing PDF documents.<br>
  * Based on TCPDF_PARSER, part of the TCPDF project by Nicola Asuni.
  * @brief This is a PHP class for parsing PDF documents..
- * @version 1.0
+ * @version 1.1
  * @author Paul Nicholls - github.com/pauln
  * @author Nicola Asuni - info@tecnick.com
  */
@@ -1217,6 +1217,42 @@ class tcpdi_parser {
                 return $res;
             }
         }
+    }
+
+    /**
+     * Get annotations from current page
+     *
+     * @return array
+     */
+    public function getPageAnnotations() {
+        return $this->_getPageAnnotations($this->pages[$this->pageno]);
+    }
+
+    /**
+     * Get annotations from /Page
+     *
+     * @param array $obj Array of pdf-data
+     */
+    private function _getPageAnnotations ($obj) { // $obj = /Page
+        $obj = $this->getObjectVal($obj);
+
+        // If the current object has an annotations
+        // dictionary associated with it, we use
+        // it. Otherwise, we move back to its
+        // parent object.
+        if (isset ($obj[1][1]['/Annots'])) {
+            $annots = $obj[1][1]['/Annots'];
+        } else {
+            if (!isset ($obj[1][1]['/Parent'])) {
+                return false;
+            } else {
+                $annots = $this->_getPageAnnotations($obj[1][1]['/Parent']);
+            }
+        }
+
+        if ($annots[0] == PDF_TYPE_OBJREF)
+            return $this->getObjectVal($annots);
+        return $annots;
     }
 
 
