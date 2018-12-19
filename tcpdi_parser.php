@@ -809,8 +809,11 @@ class tcpdi_parser {
                     if (($char == '<') AND (preg_match('/^([0-9A-Fa-f ]+)[>]/iU', substr($data, $offset), $matches) == 1)) {
                         $objval = $matches[1];
                         $offset += strlen($matches[0]);
-                        unset($matches);
+                    } else if (($char == '<') AND ($endpos = strpos($this->pdfdata, '>', $offset)) !== FALSE) {
+                        $objval = substr($data, $offset,$endpos-$offset);
+                        $offset = $endpos + 1;
                     }
+                    unset($matches);
                 }
                 break;
             }
