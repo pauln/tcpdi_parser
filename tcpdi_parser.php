@@ -1441,7 +1441,7 @@ class tcpdi_parser {
      */
     public function Error($msg) {
         // exit program and print error
-        die("<strong>TCPDI_PARSER ERROR [{$this->uniqueid}]: </strong>".$msg);
+        throw new Exception("<strong>TCPDI_PARSER ERROR [{$this->uniqueid}]: </strong>".$msg);
     }
 
 } // END OF TCPDF_PARSER CLASS
