@@ -483,7 +483,7 @@ class tcpdi_parser {
             $v = $sarr[$key];
             if (($key == '/Type') AND ($v[0] == PDF_TYPE_TOKEN AND ($v[1] == 'XRef'))) {
                 $valid_crs = true;
-            } elseif (($key == '/Index') AND ($v[0] == PDF_TYPE_ARRAY AND count($v[1] >= 2))) {
+            } elseif (($key == '/Index') AND ($v[0] == PDF_TYPE_ARRAY AND (count($v[1]) >= 2))) {
                 // first object number in the subsection
                 $index_first = intval($v[1][0][1]);
                 // number of entries in the subsection
@@ -709,7 +709,7 @@ class tcpdi_parser {
         $objtype = ''; // object type to be returned
         $objval = ''; // object value to be returned
         // skip initial white space chars: \x00 null (NUL), \x09 horizontal tab (HT), \x0A line feed (LF), \x0C form feed (FF), \x0D carriage return (CR), \x20 space (SP)
-        while (strspn($data{$offset}, "\x00\x09\x0a\x0c\x0d\x20") == 1) {
+        while (strspn($data{$offset}, "\x00\x09\x0a\x0c\x0d\x20")) {
             $offset++;
         }
         // get first char
@@ -721,8 +721,7 @@ class tcpdi_parser {
                 $next = strcspn($data, "\r\n", $offset);
                 if ($next > 0) {
                     $offset += $next;
-                    list($obj, $unused) = $this->getRawObject($offset, $data);
-                    return $obj;
+                    return $this->getRawObject($offset, $data);
                 }
                 break;
             }
@@ -891,19 +890,24 @@ class tcpdi_parser {
         $objval = array();
 
         // Extract dict from data.
-        $i=1;
+        $i=2;
         $dict = '';
         $offset += 2;
         do {
             if ($data{$offset} == '>' && $data{$offset+1} == '>') {
-                $i--;
+                $i -= 2;
                 $dict .= '>>';
                 $offset += 2;
             } else if ($data{$offset} == '<' && $data{$offset+1} == '<') {
-                $i++;
+                $i += 2;
                 $dict .= '<<';
                 $offset += 2;
             } else {
+                if ($data{$offset} == '<') {
+                    $i++;
+                } else if ($data{$offset} == '>') {
+                    $i--;
+                }
                 $dict .= $data{$offset};
                 $offset++;
             }
