@@ -50,9 +50,6 @@ namespace Librecode\TcpdiParser;
  * @version 1.1
  */
 
-// include class for decoding filters
-require_once(dirname(__FILE__).'/include/tcpdf_filters.php');
-
 if (!defined ('PDF_TYPE_NULL'))
     define ('PDF_TYPE_NULL', 0);
 if (!defined ('PDF_TYPE_NUMERIC'))
@@ -259,10 +256,12 @@ class tcpdi_parser {
     function readPages() {
         $params = $this->getObjectVal($this->xref['trailer'][1]['/Root']);
         $objref = null;
-        foreach ($params[1][1] as $k=>$v) {
-            if ($k == '/Pages') {
-                $objref = $v;
-                break;
+        if ($params && !empty($params[1]) && is_array($params[1][1])) {
+            foreach ($params[1][1] as $k=>$v) {
+                if ($k == '/Pages') {
+                    $objref = $v;
+                    break;
+                }
             }
         }
         if ($objref == null || $objref[0] !== PDF_TYPE_OBJREF) {
@@ -486,7 +485,7 @@ class tcpdi_parser {
             $v = $sarr[$key];
             if (($key == '/Type') AND ($v[0] == PDF_TYPE_TOKEN AND ($v[1] == 'XRef'))) {
                 $valid_crs = true;
-            } elseif (($key == '/Index') AND ($v[0] == PDF_TYPE_ARRAY AND (count($v[1]) >= 2))) {
+            } elseif (($key == '/Index') AND ($v[0] == PDF_TYPE_ARRAY AND count($v[1]) >= 2)) {
                 // first object number in the subsection
                 $index_first = intval($v[1][0][1]);
                 // number of entries in the subsection
@@ -1435,7 +1434,7 @@ class tcpdi_parser {
             if (!isset ($obj[1][1]['/Parent'])) {
                 return false;
             } else {
-                $res = $this->_getPageRotation($obj[1][1]['/Parent']);
+                $res = (array)$this->_getPageRotation($obj[1][1]['/Parent']);
                 if ($res[0] == PDF_TYPE_OBJECT)
                     return $res[1];
                 return $res;
