@@ -1,4 +1,7 @@
 <?php
+
+namespace Librecode\TcpdiParser;
+
 //============================================================+
 // File name   : tcpdi_parser.php
 // Version     : 1.1

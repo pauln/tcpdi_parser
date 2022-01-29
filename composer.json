@@ -1,0 +1,19 @@
+{
+    "name": "librecode/tcpdi_parser",
+    "license": "LGPL-3.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "LibreCode\\TcpdiParser\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Vitor Mattos",
+            "email": "vitor@php.rio"
+        },
+        {
+            "name": "Paul Nicholls",
+            "homepage": "https://github.com/pauln"
+        }
+    ]
+}
