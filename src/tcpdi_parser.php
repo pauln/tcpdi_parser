@@ -2,6 +2,8 @@
 
 namespace LibreCode\TcpdiParser;
 
+use TCPDF_FILTERS;
+
 //============================================================+
 // File name   : tcpdi_parser.php
 // Version     : 1.1
