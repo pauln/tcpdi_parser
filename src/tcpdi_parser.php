@@ -1,6 +1,6 @@
 <?php
 
-namespace Librecode\TcpdiParser;
+namespace LibreCode\TcpdiParser;
 
 //============================================================+
 // File name   : tcpdi_parser.php
