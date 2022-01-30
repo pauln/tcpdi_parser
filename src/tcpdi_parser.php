@@ -1,6 +1,6 @@
 <?php
 
-namespace LibreCode\TcpdiParser;
+namespace LibreSign\TcpdiParser;
 
 use TCPDF_FILTERS;
 

@@ -1,9 +1,9 @@
 {
-    "name": "librecode/tcpdi_parser",
+    "name": "libresign/tcpdi_parser",
     "license": "LGPL-3.0-or-later",
     "autoload": {
         "psr-4": {
-            "LibreCode\\TcpdiParser\\": "src/"
+            "LibreSign\\TcpdiParser\\": "src/"
         }
     },
     "authors": [
