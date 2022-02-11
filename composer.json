@@ -1,0 +1,19 @@
+{
+    "name": "libresign/tcpdi_parser",
+    "license": "LGPL-3.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "LibreSign\\TcpdiParser\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Vitor Mattos",
+            "email": "vitor@php.rio"
+        },
+        {
+            "name": "Paul Nicholls",
+            "homepage": "https://github.com/pauln"
+        }
+    ]
+}
